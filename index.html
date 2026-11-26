@@ -465,6 +465,7 @@ let city = "";        // chosen city/municipality
 let monthKey = "";    // "YYYY-MM" shown in the calendar
 let selectedKey = ""; // date picked in the calendar ("YYYY-MM-DD")
 let FBLINK = {};      // city -> Facebook page link
+let OFFICE_DAYS = {closed:{}, open:{}}; // office-wide overrides from rows with CITY = ALL
 
 /* ---------- dates (always Philippine time) ---------- */
 function manilaToday(){
@@ -562,6 +563,7 @@ async function loadSchedules(){
     const get = (r, i) => i >= 0 ? (r[i] || "").trim() : "";
     const out = [];
     const fbMap = {};
+    const officeDays = {closed:{}, open:{}};
     let lastCity = "";
     for(const r of table.slice(1)){
       const rawCity = get(r, C.city);
@@ -569,6 +571,12 @@ async function loadSchedules(){
       const cityName = cleanCity(rawCity || lastCity);
       const date = toIso(get(r, C.date));
       const barangay = get(r, C.brgy), venue = get(r, C.loc);
+      if(cityName.toUpperCase() === "ALL"){   // office-wide rows: CLOSE or OPEN on a date
+        const st = get(r, C.status).toUpperCase();
+        if(date && st.includes("CLOSE")) officeDays.closed[date] = true;
+        if(date && st.includes("OPEN")) officeDays.open[date] = true;
+        continue;
+      }
       const fbRaw = get(r, C.fb);
       if(cityName && fbRaw && !fbMap[cityName]) fbMap[cityName] = fbRaw;
       if(!cityName || !date || (!barangay && !venue)) continue;
@@ -583,6 +591,7 @@ async function loadSchedules(){
     }
     ROWS = out;
     FBLINK = fbMap;
+    OFFICE_DAYS = officeDays;
     if(!ROWS.length) showNotice("The sheet has rows, but none had a usable DATE. Check the date column.");
     else $("notice").hidden = true;
   }catch(err){
@@ -684,6 +693,30 @@ function fbLink(){
   return /^https?:\/\//i.test(raw) ? raw : "https://" + raw.replace(/^\/+/, "");
 }
 
+// Office days: Tuesday to Saturday, unless a sheet row with CITY = ALL says CLOSE or OPEN
+function addDays(key, n){
+  const [y,m,d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m-1, d+n)).toISOString().slice(0,10);
+}
+function officeOpen(key){
+  if(OFFICE_DAYS.open[key]) return true;
+  if(OFFICE_DAYS.closed[key]) return false;
+  const [y,m,d] = key.split("-").map(Number);
+  const wd = new Date(Date.UTC(y, m-1, d)).getUTCDay();   // 0 = Sunday
+  return wd >= 2 && wd <= 6;
+}
+function nextOfficeDay(from){
+  for(let i = 1; i <= 60; i++){
+    const k = addDays(from, i);
+    if(officeOpen(k)) return k;
+  }
+  return "";
+}
+function closedText(key){
+  const next = nextOfficeDay(key);
+  return `<b>The COMELEC office is closed.</b><br>${next ? "Next office day: " + esc(prettyDate(next)) : ""}`;
+}
+
 function renderToday(today){
   $("todayDate").textContent = prettyDate(today);
   const fb = fbLink();
@@ -698,7 +731,7 @@ function renderToday(today){
   const list = visitsOn(today);
   $("todayEvents").innerHTML = list.length
     ? list.map(e => eventCard(e, today)).join("")
-    : officeBox(`<b>No satellite registration today.</b><br>${OFFICE_LINE}`, nextVisitHTML(today));
+    : officeBox(officeOpen(today) ? `<b>No satellite registration today.</b><br>${OFFICE_LINE}` : closedText(today), nextVisitHTML(today));
 }
 
 function renderCalendar(){
@@ -741,7 +774,7 @@ function renderCalendar(){
   $("dayTitle").innerHTML = esc(prettyDate(selectedKey)) + (selectedKey === today ? ' <span class="tag">Today</span>' : "");
   $("dayList").innerHTML = picked.length
     ? picked.map(e => eventCard(e, today, true)).join("")
-    : officeBox(`<b>No satellite registration on this day.</b><br>${OFFICE_LINE}`);
+    : officeBox(officeOpen(selectedKey) ? `<b>No satellite registration on this day.</b><br>${OFFICE_LINE}` : closedText(selectedKey));
 }
 
 function renderAll(){
