@@ -545,15 +545,12 @@ function showNotice(msg){
   $("notice").hidden = false;
 }
 
-async function loadSchedules(){
-  try{
-    if(!SHEET_CSV_URL) throw new Error("The schedule link is not set yet. Please contact the administrator.");
+const CACHE_KEY = "comelec-schedule-csv";
+let LOADED = false;   // true after the first load attempt finishes
+function saveCache(text){ try{ localStorage.setItem(CACHE_KEY, text); }catch(e){} }
+function loadCache(){ try{ return localStorage.getItem(CACHE_KEY) || ""; }catch(e){ return ""; } }
 
-    const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes("?") ? "&" : "?") + "t=" + Date.now(), {cache:"no-store"});
-    if(!res.ok) throw new Error("Unable to load the schedule (HTTP " + res.status + ").");
-    const text = await res.text();
-    if(text.trim().startsWith("<")) throw new Error("The link returned a web page, not a CSV. Re-publish the sheet as CSV.");
-
+function applySchedule(text){
     const table = parseCSV(text);
     if(table.length < 2) throw new Error("No schedule records found.");
 
@@ -600,9 +597,23 @@ async function loadSchedules(){
     OFFICE_DAYS = officeDays;
     if(!ROWS.length) showNotice("The sheet has rows, but none had a usable DATE. Check the date column.");
     else $("notice").hidden = true;
+}
+
+async function loadSchedules(){
+  try{
+    if(!SHEET_CSV_URL) throw new Error("The schedule link is not set yet. Please contact the administrator.");
+
+    const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes("?") ? "&" : "?") + "t=" + Date.now(), {cache:"no-store"});
+    if(!res.ok) throw new Error("Unable to load the schedule (HTTP " + res.status + ").");
+    const text = await res.text();
+    if(text.trim().startsWith("<")) throw new Error("The link returned a web page, not a CSV. Re-publish the sheet as CSV.");
+
+    applySchedule(text);
+    saveCache(text);
   }catch(err){
     showNotice("Could not load the latest schedule. " + err.message);
   }
+  LOADED = true;
   buildPicker();
   renderAll();
   $("loaded").textContent = new Date().toLocaleString("en-PH", {timeZone:"Asia/Manila"});
@@ -624,7 +635,7 @@ function renderDropdown(){
   const list = allCities().filter(c => !q || c.toLowerCase().includes(q));
   $("dd").innerHTML = list.length
     ? list.map(c => `<button type="button" class="dd-item" data-city="${esc(c)}">${esc(c)}</button>`).join("")
-    : `<div class="dd-empty">No municipality matches that name.</div>`;
+    : `<div class="dd-empty">${LOADED ? "No municipality matches that name." : "Loading cities…"}</div>`;
   $("dd").hidden = false;
 }
 function hideDropdown(){ $("dd").hidden = true; }
@@ -750,6 +761,7 @@ function renderToday(today){
     return;
   }
   $("todayTitle").textContent = "Today in " + city;
+  if(!LOADED && !ROWS.length){ $("todayEvents").innerHTML = '<div class="empty">Loading today’s schedule…</div>'; return; }
   const list = visitsOn(today);
   $("todayEvents").innerHTML = list.length
     ? list.map(e => eventCard(e, today)).join("")
@@ -830,7 +842,10 @@ $("cal").addEventListener("click", e => {
 $("prevM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), -1); renderCalendar(); });
 $("nextM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), 1);  renderCalendar(); });
 
-// Start: show the prompts, then load the schedule
+// Start: show the saved copy at once (if any), then refresh from Google Sheets
+const cachedCsv = loadCache();
+if(cachedCsv){ try{ applySchedule(cachedCsv); LOADED = true; }catch(e){} }
+buildPicker();
 renderAll();
 loadSchedules();
 setInterval(loadSchedules, REFRESH_MINUTES * 60 * 1000);   // refresh from Google Sheets every 5 minutes
