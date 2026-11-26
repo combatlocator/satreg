@@ -108,6 +108,7 @@ input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rg
 }
 .search-row button:hover { background: #dca42c; }
 .picker-wrap { position: relative; }
+.picker-wrap input { width: 100%; cursor: pointer; }
 .dd {
   position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 30;
   background: #fff; border: 1px solid #cdd7e3; border-radius: 10px;
@@ -388,13 +389,11 @@ footer strong { color: var(--gold); }
   <section class="picker" aria-labelledby="pickLabel">
     <label for="searchInput" id="pickLabel"><span>1</span>Select city/municipality</label>
     <div class="picker-wrap">
-      <div class="search-row">
-        <input id="searchInput" type="search" autocomplete="off" placeholder="Tap to choose a city/municipality">
-        <button type="button" id="searchBtn">SEARCH</button>
-      </div>
+      <input id="searchInput" type="search" readonly placeholder="Tap to choose a city/municipality">
       <div class="dd" id="dd" hidden></div>
     </div>
     <p class="hint" id="pickHint">Choose your city or municipality to see its schedule.</p>
+    <a class="fb" id="fbBtn" href="#" target="_blank" rel="noopener" hidden>👍 Follow us on Facebook</a>
   </section>
 
   <div class="notice" id="notice" hidden></div>
@@ -405,7 +404,6 @@ footer strong { color: var(--gold); }
       <small>● HAPPENING TODAY</small>
       <h2 id="todayTitle">Satellite Registration Today</h2>
       <p id="todayDate"></p>
-      <a class="fb" id="fbBtn" href="#" target="_blank" rel="noopener" hidden>👍 Follow us on Facebook</a>
     </div>
     <div class="cards" id="todayEvents"></div>
   </section>
@@ -426,21 +424,14 @@ footer strong { color: var(--gold); }
           <button type="button" id="nextM" aria-label="Next month">›</button>
         </div>
       </div>
-      <p class="cal-sub" id="calSub"></p>
 
       <div class="cal" id="cal"></div>
+
+      <h3 class="day-title" id="dayTitle"></h3>
+      <div class="cards" id="dayList" style="margin-top:0"></div>
     </div>
   </section>
 
-  <!-- Browse: names only -->
-  <section class="section" aria-labelledby="browseTitle">
-    <div class="section-heading">
-      <small>EXPLORE</small>
-      <h2 id="browseTitle">Browse Cities and Municipalities</h2>
-      <p>Tap a city or municipality to see its schedule.</p>
-    </div>
-    <div class="browse" id="browse"></div>
-  </section>
 
 </main>
 
@@ -477,9 +468,6 @@ function manilaToday(){
   const parts = new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Manila",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
   const g = t => parts.find(p=>p.type===t).value;
   return `${g("year")}-${g("month")}-${g("day")}`;
-}
-function manilaHour(){
-  return Number(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Manila",hour:"numeric",hourCycle:"h23"}).format(new Date()));
 }
 function prettyDate(iso){
   const [y,m,d] = iso.split("-").map(Number);
@@ -606,7 +594,6 @@ function allCities(){
 
 function buildPicker(){
   if(city && !allCities().includes(city)) city = "";
-  renderBrowse();
   if(document.activeElement !== $("searchInput")) $("searchInput").value = city;
 }
 
@@ -621,13 +608,6 @@ function renderDropdown(){
 }
 function hideDropdown(){ $("dd").hidden = true; }
 
-function renderBrowse(){
-  const list = allCities();
-  $("browse").innerHTML = list.length
-    ? list.map(c => `<button type="button" class="${c===city ? "on" : ""}" data-city="${esc(c)}">${esc(c)}</button>`).join("")
-    : `<p class="hint" style="grid-column:1/-1">No schedule has been loaded yet.</p>`;
-}
-
 function selectCity(name){
   city = name;
   monthKey = "";
@@ -635,18 +615,8 @@ function selectCity(name){
   $("searchInput").value = name;
   $("pickHint").textContent = "Showing the schedule for " + name + ".";
   hideDropdown();
-  renderBrowse();
   renderAll();
   $("todaySec").scrollIntoView({behavior:"smooth", block:"start"});
-}
-
-function pickFirstMatch(){
-  const q = $("searchInput").value.trim().toLowerCase();
-  if(!q) return;
-  const cities = allCities();
-  const hit = cities.find(c => c.toLowerCase() === q) || cities.find(c => c.toLowerCase().includes(q));
-  if(hit) selectCity(hit);
-  else $("pickHint").textContent = "No municipality matches that name. Try the list.";
 }
 
 /* ---------- visits and status ---------- */
@@ -655,15 +625,10 @@ function visitsOn(key){
     .sort((a,b) => (a.barangay||"").localeCompare(b.barangay||""));
 }
 
-// Cancelled comes from the sheet. Otherwise: today = Ongoing (until 6:00 pm),
-// future = Upcoming, past = Completed. After 6:00 pm, today shows "Done for today".
+// Cancelled comes from the sheet. Today has no status label; future = Upcoming; past = Completed.
 function statusOf(e, today){
   if(e.cancelled) return {text:"CANCELLED", cls:"cancelled"};
-  if(e.date === today){
-    return manilaHour() >= 18
-      ? {text:"DONE FOR TODAY", cls:"done"}
-      : {text:"ONGOING", cls:"ongoing"};
-  }
+  if(e.date === today) return {text:"", cls:"today"};
   if(e.date > today) return {text:"UPCOMING", cls:"upcoming"};
   return {text:"COMPLETED", cls:"done"};
 }
@@ -674,9 +639,9 @@ function mapUrl(e){
 }
 
 /* ---------- building blocks ---------- */
-function eventCard(e, today){
+function eventCard(e, today, showAll){
   const s = statusOf(e, today);
-  const badge = (s.cls === "cancelled" || s.cls === "upcoming") ? `<span class="status ${s.cls}">${s.text}</span>` : "";
+  const badge = s.text && (showAll || s.cls === "cancelled" || s.cls === "upcoming") ? `<span class="status ${s.cls}">${s.text}</span>` : "";
   return `
     <article class="card ${e.cancelled ? "is-cx" : ""}">
       ${badge}
@@ -708,8 +673,9 @@ function officeBox(message, extra){
 /* ---------- sections ---------- */
 // First Facebook link filled in for the chosen city (only http/https links are used)
 function fbLink(){
-  const row = ROWS.find(r => r.city === city && /^https?:\/\//i.test(r.fb));
-  return row ? row.fb : "";
+  const row = ROWS.find(r => r.city === city && r.fb);
+  if(!row) return "";
+  return /^https?:\/\//i.test(row.fb) ? row.fb : "https://" + row.fb.replace(/^\/+/, "");
 }
 
 function renderToday(today){
@@ -747,26 +713,28 @@ function renderCalendar(){
   $("calCity").textContent = city;
   $("monthLabel").textContent = label;
 
-  let total = 0;
   let html = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="dow">${d}</div>`).join("");
   for(let i = 0; i < first.getUTCDay(); i++) html += `<div class="day blank" aria-hidden="true"></div>`;
 
   for(let d = 1; d <= dim; d++){
     const key = `${monthKey}-${String(d).padStart(2,"0")}`;
     const list = visitsOn(key);
-    total += list.length;
-    const cls = ["day", list.length ? "has" : "", key === today ? "today" : ""].join(" ");
+    const cls = ["day", list.length ? "has" : "", key === today ? "today" : "", key === selectedKey ? "sel" : ""].join(" ");
     const chips = list.slice(0,3).map(e => `<span class="dchip ${e.cancelled ? "cx" : ""}">${esc(e.barangay || e.venue)}</span>`).join("")
                 + (list.length > 3 ? `<span class="dmore">+${list.length-3} more</span>` : "");
-    html += `<div class="${cls}" aria-label="${esc(shortDate(key))}, ${list.length} ${list.length===1 ? "visit" : "visits"}">
+    html += `<div class="${cls}" data-key="${key}" aria-label="${esc(shortDate(key))}, ${list.length} ${list.length===1 ? "visit" : "visits"}">
       <span class="dn">${d}</span>
       ${list.length ? `<span class="dcnt">${list.length}</span>` : ""}
       <span class="dchips">${chips}</span>
     </div>`;
   }
   $("cal").innerHTML = html;
-  $("calSub").textContent = `${total} ${total===1 ? "visit" : "visits"} in ${label}`;
 
+  const picked = visitsOn(selectedKey);
+  $("dayTitle").innerHTML = esc(prettyDate(selectedKey)) + (selectedKey === today ? ' <span class="tag">Today</span>' : "");
+  $("dayList").innerHTML = picked.length
+    ? picked.map(e => eventCard(e, today, true)).join("")
+    : officeBox(`<b>No satellite registration on this day.</b><br>${OFFICE_LINE}`);
 }
 
 function renderAll(){
@@ -775,17 +743,12 @@ function renderAll(){
 }
 
 /* ---------- events ---------- */
-$("searchInput").addEventListener("focus", () => { $("searchInput").value = ""; renderDropdown(); });
-$("searchInput").addEventListener("input", renderDropdown);
+// The field is read-only: tapping opens the list, so no keyboard appears
+$("searchInput").addEventListener("click", () => { $("searchInput").value = ""; renderDropdown(); });
 $("searchInput").addEventListener("blur", () => setTimeout(() => {
   hideDropdown();
-  $("searchInput").value = city;   // nothing typed means keep the current choice
+  $("searchInput").value = city;   // keep the current choice
 }, 150));
-$("searchInput").addEventListener("keydown", e => {
-  if(e.key === "Enter"){ e.preventDefault(); pickFirstMatch(); }
-});
-$("searchBtn").addEventListener("mousedown", e => e.preventDefault());
-$("searchBtn").addEventListener("click", pickFirstMatch);
 
 // keep focus in the field while tapping a suggestion
 $("dd").addEventListener("mousedown", e => e.preventDefault());
@@ -793,15 +756,17 @@ $("dd").addEventListener("click", e => {
   const b = e.target.closest("[data-city]");
   if(b) selectCity(b.dataset.city);
 });
-$("browse").addEventListener("click", e => {
-  const b = e.target.closest("[data-city]");
-  if(b) selectCity(b.dataset.city);
+
+$("cal").addEventListener("click", e => {
+  const b = e.target.closest("[data-key]");
+  if(!b) return;
+  selectedKey = b.dataset.key;
+  renderCalendar();
 });
 $("prevM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), -1); renderCalendar(); });
 $("nextM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), 1);  renderCalendar(); });
 
 // Start: show the prompts, then load the schedule
-renderBrowse();
 renderAll();
 loadSchedules();
 setInterval(loadSchedules, REFRESH_MINUTES * 60 * 1000);   // refresh from Google Sheets every 5 minutes
