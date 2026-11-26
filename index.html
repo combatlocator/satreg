@@ -141,6 +141,7 @@ input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rg
   font-size: 14px; padding: 10px 16px; border-radius: 9px;
 }
 .fb:hover { background: #0f63d6; }
+.fb svg { width: 18px; height: 18px; fill: #fff; }
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -271,14 +272,17 @@ input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rg
 .day:hover { border-color: var(--navy); }
 .day.blank { background: none; border: none; cursor: default; min-height: 0; }
 .day.blank:hover { border: none; }
-.day.has { background: var(--gold-soft); border-color: var(--gold); }
+.day.st-today { background: #e5f5ec; border-color: var(--green); }
+.day.st-upcoming { background: #e6edff; border-color: var(--blue); }
+.day.st-done { background: var(--grey-soft); border-color: #9aa5b4; }
+.day.st-cancelled { background: var(--red-soft); border-color: var(--red); }
 .day.sel { box-shadow: inset 0 0 0 2px var(--navy); }
 .dn {
   font-size: 13px; font-weight: 700; color: var(--navy);
   min-width: 24px; height: 24px; line-height: 24px; text-align: center;
   border-radius: 999px; align-self: flex-start;
 }
-.day.today .dn { background: var(--navy); color: #fff; }
+.day.today .dn { background: var(--green); color: #fff; }
 .dchips { display: flex; flex-direction: column; gap: 3px; }
 .dchip {
   font-size: 11px; line-height: 1.3; background: #fff; color: var(--navy); font-weight: 600;
@@ -286,11 +290,6 @@ input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rg
 }
 .dchip.cx { color: var(--red); border-left-color: var(--red); text-decoration: line-through; }
 .dmore { font-size: 11px; color: var(--muted); font-weight: 600; }
-.dcnt {
-  display: none;
-  background: var(--navy); color: #fff; border-radius: 999px;
-  font-size: 11px; font-weight: 700; padding: 0 6px; margin-top: auto; align-self: center;
-}
 .legend { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
 .legend i {
   display: inline-block; width: 12px; height: 12px; border-radius: 3px;
@@ -357,11 +356,14 @@ footer strong { color: var(--gold); }
   .calendar-header .nav button { width: 38px; height: 38px; }
   .cal, .dow-row { gap: 3px; }
   .dow { font-size: 11px; }
-  .day { min-height: 54px; padding: 4px 2px; align-items: center; gap: 2px; border-radius: 8px; }
+  .day { min-height: 84px; padding: 4px 2px; align-items: stretch; gap: 3px; border-radius: 8px; }
   .dn { align-self: center; font-size: 12px; min-width: 22px; height: 22px; line-height: 22px; }
-  .dchips { display: none; }
-  .dcnt { display: inline-block; }
-  .day:not(.has) .dcnt { visibility: hidden; }
+  .dchips { display: flex; width: 100%; gap: 2px; }
+  .dchip {
+    font-size: 8.5px; line-height: 1.25; padding: 2px 3px; width: 100%;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal;
+  }
+  .dmore { font-size: 8.5px; }
   .browse { grid-template-columns: repeat(2, 1fr); }
   .browse button { font-size: 13px; padding: 10px 8px; }
 }
@@ -393,7 +395,6 @@ footer strong { color: var(--gold); }
       <div class="dd" id="dd" hidden></div>
     </div>
     <p class="hint" id="pickHint">Choose your city or municipality to see its schedule.</p>
-    <a class="fb" id="fbBtn" href="#" target="_blank" rel="noopener" hidden>👍 Follow us on Facebook</a>
   </section>
 
   <div class="notice" id="notice" hidden></div>
@@ -404,6 +405,7 @@ footer strong { color: var(--gold); }
       <small>● HAPPENING TODAY</small>
       <h2 id="todayTitle">Satellite Registration Today</h2>
       <p id="todayDate"></p>
+      <a class="fb" id="fbBtn" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7A10 10 0 0 0 22 12z"/></svg>Follow us on Facebook</a>
     </div>
     <div class="cards" id="todayEvents"></div>
   </section>
@@ -438,7 +440,7 @@ footer strong { color: var(--gold); }
 <footer>
   <strong>COMELEC · BATANGAS</strong><br>
   Satellite Registration Locator<br>
-  Updates automatically every 5 minutes. Last updated: <span id="loaded">–</span><br>
+  Last updated: <span id="loaded">–</span><br>
   Please verify schedule details with your local COMELEC office.
 </footer>
 
@@ -462,6 +464,7 @@ let ROWS = [];        // every visit in the sheet
 let city = "";        // chosen city/municipality
 let monthKey = "";    // "YYYY-MM" shown in the calendar
 let selectedKey = ""; // date picked in the calendar ("YYYY-MM-DD")
+let FBLINK = {};      // city -> Facebook page link
 
 /* ---------- dates (always Philippine time) ---------- */
 function manilaToday(){
@@ -551,13 +554,14 @@ async function loadSchedules(){
     const col = name => head.indexOf(name);
     const C = {
       city: col("CITY/MUNICIPALITY"), brgy: col("BARANGAY"), date: col("DATE"), loc: col("LOCATION"),
-      status: col("STATUS"), addr: col("ADDRESS"), notes: col("NOTES"), fb: col("FACEBOOK")
+      status: col("STATUS"), addr: col("ADDRESS"), notes: col("NOTES"), fb: head.findIndex(h => h.includes("FACEBOOK") || h.startsWith("FB"))
     };
     if([C.city, C.brgy, C.date, C.loc].some(i => i < 0))
       throw new Error("Check that the headers CITY/MUNICIPALITY, BARANGAY, DATE, LOCATION and STATUS are spelled correctly.");
 
     const get = (r, i) => i >= 0 ? (r[i] || "").trim() : "";
     const out = [];
+    const fbMap = {};
     let lastCity = "";
     for(const r of table.slice(1)){
       const rawCity = get(r, C.city);
@@ -565,6 +569,8 @@ async function loadSchedules(){
       const cityName = cleanCity(rawCity || lastCity);
       const date = toIso(get(r, C.date));
       const barangay = get(r, C.brgy), venue = get(r, C.loc);
+      const fbRaw = get(r, C.fb);
+      if(cityName && fbRaw && !fbMap[cityName]) fbMap[cityName] = fbRaw;
       if(!cityName || !date || (!barangay && !venue)) continue;
       out.push({
         id: out.length,
@@ -572,11 +578,11 @@ async function loadSchedules(){
         barangay, venue, date,
         address: get(r, C.addr),
         notes: get(r, C.notes),
-        fb: get(r, C.fb),
         cancelled: get(r, C.status).toUpperCase().includes("CANCEL")
       });
     }
     ROWS = out;
+    FBLINK = fbMap;
     if(!ROWS.length) showNotice("The sheet has rows, but none had a usable DATE. Check the date column.");
     else $("notice").hidden = true;
   }catch(err){
@@ -673,9 +679,9 @@ function officeBox(message, extra){
 /* ---------- sections ---------- */
 // First Facebook link filled in for the chosen city (only http/https links are used)
 function fbLink(){
-  const row = ROWS.find(r => r.city === city && r.fb);
-  if(!row) return "";
-  return /^https?:\/\//i.test(row.fb) ? row.fb : "https://" + row.fb.replace(/^\/+/, "");
+  const raw = FBLINK[city];
+  if(!raw) return "";
+  return /^https?:\/\//i.test(raw) ? raw : "https://" + raw.replace(/^\/+/, "");
 }
 
 function renderToday(today){
@@ -719,12 +725,13 @@ function renderCalendar(){
   for(let d = 1; d <= dim; d++){
     const key = `${monthKey}-${String(d).padStart(2,"0")}`;
     const list = visitsOn(key);
-    const cls = ["day", list.length ? "has" : "", key === today ? "today" : "", key === selectedKey ? "sel" : ""].join(" ");
+    const allCx = list.length > 0 && list.every(e => e.cancelled);
+    const st = !list.length ? "" : allCx ? "st-cancelled" : key === today ? "st-today" : key > today ? "st-upcoming" : "st-done";
+    const cls = ["day", st, key === today ? "today" : "", key === selectedKey ? "sel" : ""].join(" ");
     const chips = list.slice(0,3).map(e => `<span class="dchip ${e.cancelled ? "cx" : ""}">${esc(e.barangay || e.venue)}</span>`).join("")
                 + (list.length > 3 ? `<span class="dmore">+${list.length-3} more</span>` : "");
     html += `<div class="${cls}" data-key="${key}" aria-label="${esc(shortDate(key))}, ${list.length} ${list.length===1 ? "visit" : "visits"}">
       <span class="dn">${d}</span>
-      ${list.length ? `<span class="dcnt">${list.length}</span>` : ""}
       <span class="dchips">${chips}</span>
     </div>`;
   }
