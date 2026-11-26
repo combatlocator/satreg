@@ -1,556 +1,796 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0b2a4a">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COMELEC Batangas Satellite Registration Locator</title>
+
 <style>
-  :root{
-    --navy:#0b2a4a; --navy2:#16406b; --gold:#f2b705; --gold-dark:#8a6a00;
-    --gold-soft:#fff6d4; --gold-line:#e8c64c;
-    --bg:#f1f4f8; --card:#ffffff; --text:#1b2633; --muted:#5b6778; --line:#e3e8ef; --line2:#c9d3e2;
-    --green:#16794a; --greenbg:#e3f5ea; --red:#b42318; --redbg:#fde7e4;
-    --blue:#1d4ed8; --bluebg:#e6edff; --grey:#4b5563; --greybg:#eceff3;
-  }
-  *{box-sizing:border-box}
-  [hidden]{display:none !important}
-  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-text-size-adjust:100%}
-  .wrap{max-width:960px;margin:0 auto;padding:0 16px}
+:root {
+  --navy: #102b4e;
+  --blue: #1d4d7b;
+  --gold: #e9b94f;
+  --bg: #f4f7fa;
+  --green: #16845b;
+  --red: #c0392b;
+  --text: #243447;
+  --muted: #718094;
+}
 
-  /* ---------- header ---------- */
-  .top{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff}
-  .hdr{display:flex;align-items:center;gap:18px;padding:22px 0}
-  .seal{width:88px;height:88px;object-fit:contain;flex:none;filter:drop-shadow(0 3px 10px rgba(0,0,0,.35))}
-  .hdr h1{margin:0;font-size:24px;line-height:1.25;letter-spacing:.2px}
-  .hdr p{margin:6px 0 0;font-size:15px;opacity:.88}
-  .goldbar{height:5px;background:var(--gold)}
+* { box-sizing: border-box; }
 
-  main{padding:20px 0 8px}
-  .stack{display:grid;gap:18px}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
 
-  /* ---------- cards & headings ---------- */
-  .card{background:var(--card);border-radius:16px;box-shadow:0 4px 18px rgba(11,42,74,.08);padding:20px;border:1px solid #e7ecf3}
-  .kicker{display:inline-block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--gold-dark)}
-  .card h2{margin:4px 0 0;font-size:22px;line-height:1.25;color:var(--navy)}
-  .sub{margin:4px 0 0;font-size:15px;color:var(--muted)}
-  .head{padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--line)}
-  .muted{color:var(--muted)}
-  .alert{background:var(--redbg);color:var(--red);padding:12px 14px;border-radius:12px;font-size:14px}
+header {
+  background: var(--navy);
+  color: white;
+  padding: 18px 6%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
-  /* ---------- step 1: choose city ---------- */
-  .label{display:block;font-size:17px;font-weight:800;color:var(--navy);margin-bottom:8px}
-  .label .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--navy);font-size:14px;margin-right:8px;vertical-align:2px}
-  select{
-    width:100%;padding:14px 46px 14px 16px;font-size:17px;color:var(--text);font-family:inherit;
-    border:2px solid var(--line2);border-radius:12px;background:#fff;cursor:pointer;
-    -webkit-appearance:none;appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%230b2a4a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 18px center;
-  }
-  select:focus,input[type=search]:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(22,64,107,.18)}
+.logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: white;
+  border-radius: 50%;
+}
 
-  .browse{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-  .browse-title{font-size:14px;font-weight:800;color:var(--navy);margin:0 0 8px}
-  input[type=search]{width:100%;padding:11px 14px;font-size:15px;font-family:inherit;border:1px solid var(--line2);border-radius:10px;background:#fff;color:var(--text)}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:250px;overflow:auto;padding:2px}
-  .chip-btn{border:1px solid var(--line2);background:#fff;color:var(--navy);padding:8px 13px;border-radius:999px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
-  .chip-btn:hover{border-color:var(--navy)}
-  .chip-btn.on{background:var(--navy);border-color:var(--navy);color:#fff}
+header h3 {
+  margin: 0;
+  font-size: 15px;
+}
 
-  /* ---------- prompt / office message ---------- */
-  .prompt{padding:20px;border:2px dashed var(--line2);border-radius:14px;text-align:center;color:var(--muted);font-size:15px}
-  .prompt b{display:block;color:var(--navy);font-size:17px;margin-bottom:4px}
-  .office{background:#f5f8fd;border:1px solid #d8e2f0;border-radius:14px;padding:20px;text-align:center;color:var(--navy);font-size:15px}
-  .office b{font-size:17px}
-  .office .ofaddr{margin-top:10px;color:var(--muted);font-size:14px}
-  .office-next{margin-top:14px;padding-top:14px;border-top:1px solid #d8e2f0}
+header small {
+  color: #cbd8e6;
+}
 
-  /* ---------- event cards ---------- */
-  .ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-  .ev{border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:14px;padding:16px;background:#fff;display:flex;flex-direction:column;min-width:0}
-  .ev.is-cx{border-top-color:var(--red);opacity:.8}
-  .ev-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-  .ev-date{font-size:13px;font-weight:700;color:var(--muted)}
-  .ev-place{margin:10px 0 2px;font-size:19px;font-weight:800;color:var(--navy);line-height:1.25;overflow-wrap:break-word}
-  .ev-venue{margin:0;font-size:15px;font-weight:600;color:var(--text);overflow-wrap:break-word}
-  .ev-addr,.ev-note{margin:4px 0 0;font-size:14px;color:var(--muted);overflow-wrap:break-word}
-  .ev-note b{color:var(--text)}
-  .ev.is-cx .ev-place,.ev.is-cx .ev-venue{text-decoration:line-through}
-  .btn-dir{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:10px 16px;border-radius:10px;background:var(--gold);color:var(--navy);font-weight:800;font-size:14px;text-decoration:none}
-  .btn-dir:hover{background:#e0aa00}
-  .pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
-  .p-live{background:var(--greenbg);color:var(--green)}
-  .p-up{background:var(--bluebg);color:var(--blue)}
-  .p-done{background:var(--greybg);color:var(--grey)}
-  .p-cx{background:var(--redbg);color:var(--red)}
+.hero {
+  background: linear-gradient(120deg, var(--navy), var(--blue));
+  color: white;
+  padding: 45px 6% 65px;
+}
 
-  /* ---------- month calendar ---------- */
-  .monthbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-  .monthbar button{width:44px;height:44px;border:1px solid var(--line2);background:#fff;border-radius:10px;font-size:22px;line-height:1;cursor:pointer;color:var(--navy);font-family:inherit}
-  .monthbar button:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
-  .monthlabel{font-size:19px;font-weight:800;color:var(--navy);text-align:center}
-  .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
-  .dow{font-size:12px;font-weight:700;color:var(--muted);text-align:center;padding-bottom:4px}
-  .dcell{position:relative;min-height:104px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:6px;text-align:left;font:inherit;color:inherit;cursor:pointer;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:stretch}
-  .dcell:hover{border-color:var(--navy)}
-  .dcell.blank{border:none;background:none;cursor:default;min-height:0}
-  .dcell.blank:hover{border:none}
-  .dcell.has{background:var(--gold-soft);border-color:var(--gold-line)}
-  .dcell.sel{box-shadow:0 0 0 2px var(--navy)}
-  .dn{font-size:13px;font-weight:800;color:var(--navy);align-self:flex-start;min-width:24px;text-align:center;border-radius:999px;padding:0 4px}
-  .dcell.today .dn{background:var(--navy);color:#fff}
-  .dchips{display:flex;flex-direction:column;gap:3px}
-  .dchip{display:block;font-size:11px;line-height:1.3;background:#fff;border-left:3px solid var(--gold);border-radius:4px;padding:3px 5px;color:var(--navy);font-weight:600;overflow-wrap:anywhere}
-  .dchip.cx{color:var(--red);border-left-color:var(--red);text-decoration:line-through}
-  .dmore{font-size:11px;color:var(--muted);font-weight:600}
-  .dcnt{display:none}
-  .legend{margin:12px 0 0;font-size:13px;color:var(--muted)}
-  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--gold-soft);border:1px solid var(--gold-line);vertical-align:-2px;margin-right:4px}
-  .day-title{margin:22px 0 12px;font-size:18px;font-weight:800;color:var(--navy);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  .badge-today{font-size:12px;font-weight:800;background:var(--gold);color:var(--navy);padding:3px 10px;border-radius:999px}
-  .btn-back{display:block;width:100%;margin-top:18px;padding:14px;border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;font-family:inherit}
-  .btn-back:hover{background:var(--navy);color:#fff}
+.hero small {
+  color: var(--gold);
+  font-weight: bold;
+  letter-spacing: 2px;
+}
 
-  footer{padding:18px 16px 30px;text-align:center;font-size:13px;color:var(--muted)}
-  footer p{margin:4px 0}
+.hero h1 {
+  font-size: clamp(28px, 5vw, 44px);
+  margin: 12px 0;
+}
 
-  /* ---------- phones ---------- */
-  @media(max-width:720px){
-    .wrap{padding:0 12px}
-    .hdr{gap:12px;padding:16px 0}
-    .seal{width:64px;height:64px}
-    .hdr h1{font-size:18px}
-    .hdr p{font-size:13px}
-    main{padding:14px 0 4px}
-    .stack{gap:14px}
-    .card{padding:16px 14px;border-radius:14px}
-    .card h2{font-size:20px}
-    .label{font-size:16px}
-    select{font-size:16px;padding:13px 40px 13px 14px}
-    .ev-grid{grid-template-columns:1fr;gap:12px}
-    .ev{padding:14px}
-    .ev-place{font-size:18px}
-    .cal,.dow-row{gap:3px}
-    .dow{font-size:11px;padding-bottom:2px}
-    .dcell{min-height:56px;padding:4px 2px;align-items:center;gap:2px;border-radius:8px}
-    .dn{align-self:center;font-size:12px;min-width:0;padding:0}
-    .dchips{display:none}
-    .dcnt{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--navy);color:#fff;font-size:11px;font-weight:800;margin-top:auto}
-    .dcell.today .dn{color:#fff}
-    .monthbar button{width:40px;height:40px}
-    .monthlabel{font-size:17px}
-    .btn-back{padding:13px}
-    .legend{font-size:12px}
-  }
+.hero p {
+  color: #dce6f0;
+  max-width: 650px;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1150px;
+  margin: auto;
+  padding: 25px 18px 55px;
+}
+
+.search-box {
+  background: white;
+  padding: 13px;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  margin-top: -45px;
+  position: relative;
+  box-shadow: 0 8px 25px #00000012;
+}
+
+input, select {
+  padding: 14px;
+  border: 1px solid #dce3eb;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 14px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.search-box button {
+  background: var(--gold);
+  padding: 0 22px;
+  white-space: nowrap;
+}
+
+.section-heading {
+  margin: 30px 0 15px;
+}
+
+.section-heading small {
+  color: var(--green);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.section-heading h2 {
+  margin: 7px 0;
+  font-size: 22px;
+}
+
+.section-heading p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e4eaf0;
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.card h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: var(--navy);
+}
+
+.detail {
+  font-size: 13px;
+  margin: 9px 0;
+  line-height: 1.5;
+  color: #56677a;
+}
+
+.status {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.upcoming {
+  background: #e5f5ec;
+  color: var(--green);
+}
+
+.cancelled {
+  background: #fde9e7;
+  color: var(--red);
+}
+
+.directions {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--blue);
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.empty {
+  grid-column: 1/-1;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.calendar-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 30px;
+  overflow-x: auto;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendar-header button {
+  background: #edf2f7;
+  color: var(--navy);
+  padding: 9px 14px;
+}
+
+table {
+  width: 100%;
+  border-spacing: 4px;
+  table-layout: fixed;
+  margin-top: 15px;
+}
+
+th {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+td {
+  background: #f5f7fa;
+  height: 55px;
+  text-align: center;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+td.has-event {
+  background: #e5eff9;
+  color: var(--blue);
+  font-weight: bold;
+}
+
+td.selected {
+  background: var(--navy);
+  color: white;
+}
+
+td.cancelled-day {
+  background: #fde9e7;
+  color: var(--red);
+}
+
+td.today {
+  outline: 2px solid var(--gold);
+}
+
+.municipality-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.municipality-list button {
+  background: white;
+  border: 1px solid #e1e7ee;
+  color: var(--navy);
+  padding: 12px 8px;
+  text-align: left;
+  font-size: 12px;
+}
+
+.municipality-list button:hover {
+  background: #eaf1f8;
+}
+
+footer {
+  background: #0d2440;
+  color: #cbd8e6;
+  text-align: center;
+  padding: 25px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+@media(max-width:800px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .municipality-list { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media(max-width:550px) {
+  header { padding: 12px 16px; }
+  .hero { padding: 35px 18px 60px; }
+  .container { padding: 20px 13px 40px; }
+  .search-box { flex-direction: column; }
+  .search-box button { padding: 14px; }
+  .cards { grid-template-columns: 1fr; }
+  .municipality-list { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
+
 <body>
 
-<header class="top">
-  <div class="wrap hdr">
-    <img class="seal" src="comelec-logo.png" alt="COMELEC Province of Batangas seal">
-    <div>
-      <h1>COMELEC Batangas Satellite Registration</h1>
-      <p>Find where our team is today and in the days ahead</p>
-    </div>
+<header>
+  <img src="assets/comelec-logo.png" class="logo"
+       onerror="this.style.display='none'" alt="COMELEC Logo">
+  <div>
+    <h3>COMMISSION ON ELECTIONS</h3>
+    <small>Batangas Satellite Registration Locator</small>
   </div>
-  <div class="goldbar"></div>
 </header>
 
-<main class="wrap stack">
+<section class="hero">
+  <small>BATANGAS PROVINCE</small>
+  <h1>Find satellite registration near you.</h1>
+  <p>
+    Find out where and when satellite voter registration
+    activities are being conducted across Batangas.
+  </p>
+</section>
 
-  <div class="alert" id="error" hidden></div>
+<main class="container">
 
-  <!-- Today: first thing visitors see -->
-  <section class="card" id="todaySec" aria-labelledby="todayTitle">
-    <div class="head">
-      <span class="kicker">Today</span>
-      <h2 id="todayTitle">Registration today</h2>
-      <p class="sub" id="todayDate"></p>
+  <div class="search-box">
+    <input id="searchInput"
+      list="municipalityOptions"
+      placeholder="Search city or municipality...">
+    <datalist id="municipalityOptions"></datalist>
+    <button onclick="searchMunicipality()">SEARCH</button>
+  </div>
+
+  <section>
+    <div class="section-heading">
+      <small>● HAPPENING TODAY</small>
+      <h2>Satellite Registration Today</h2>
+      <p id="todayDate"></p>
     </div>
-    <div id="todayBody"></div>
+    <div class="cards" id="todayEvents">
+      <div class="empty">Loading schedules...</div>
+    </div>
   </section>
 
-  <!-- Select city/municipality -->
-  <section class="card" aria-labelledby="pickTitle">
-    <label class="label" for="cityFilter" id="pickTitle"><span class="num">1</span>Select city/municipality</label>
-    <select id="cityFilter"></select>
+  <section class="calendar-panel">
+    <div class="calendar-header">
+      <h2>Monthly Schedule</h2>
+      <div>
+        <button onclick="changeMonth(-1)">‹</button>
+        <strong id="monthLabel"></strong>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Sun</th><th>Mon</th><th>Tue</th>
+          <th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+        </tr>
+      </thead>
+      <tbody id="calendar"></tbody>
+    </table>
+  </section>
 
-    <div class="browse">
-      <p class="browse-title">Or search and browse municipalities</p>
-      <input type="search" id="search" placeholder="Type a name, e.g. Lipa" aria-label="Search municipalities">
-      <div class="chips" id="chips"></div>
+  <section>
+    <div class="section-heading">
+      <small>REGISTRATION ACTIVITIES</small>
+      <h2 id="scheduleTitle">Upcoming Schedules</h2>
+      <p id="scheduleDescription">Select a date or municipality.</p>
+    </div>
+    <div class="cards" id="scheduleResults">
+      <div class="empty">Select a date or municipality to view schedules.</div>
     </div>
   </section>
 
-  <!-- Calendar -->
-  <section class="card" id="results" hidden aria-labelledby="resTitle">
-    <div class="head">
-      <span class="kicker">Calendar</span>
-      <h2 id="resTitle"></h2>
-      <p class="sub" id="resSub"></p>
+  <section>
+    <div class="section-heading">
+      <small>EXPLORE</small>
+      <h2>Browse Cities and Municipalities</h2>
+      <p>Select your city or municipality.</p>
     </div>
-
-    <div class="monthbar">
-      <button id="prev" aria-label="Previous month">‹</button>
-      <div class="monthlabel" id="monthLabel"></div>
-      <button id="next" aria-label="Next month">›</button>
-    </div>
-
-    <div class="cal" id="cal"></div>
-    <p class="legend"><i></i>Highlighted dates have registration. Tap a date to see its visits.</p>
-
-    <h3 class="day-title" id="dayTitle"></h3>
-    <div id="dayBody"></div>
+    <div class="municipality-list" id="municipalityList"></div>
   </section>
 
 </main>
 
 <footer>
-  <p>Updates automatically every 5 minutes. Venues may change, so please check before you go.</p>
-  <p>Last updated: <span id="loaded">–</span></p>
+  <strong>COMELEC · BATANGAS</strong><br>
+  Satellite Registration Locator<br>
+  Please verify schedule details with your local COMELEC office.
 </footer>
 
 <script>
-  /* ===== SETTINGS ==========================================================
-     SHEET_CSV_URL: the "File > Share > Publish to web > CSV" link of your Google Sheet.
-     ========================================================================= */
-  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQtaIudptiIIvzJJ4iUdKMV2D1m-abZFRn0q6rYg6o8yzbgn21oUvkbREpIfAJHw/pub?gid=1278383552&single=true&output=csv";
-  const REFRESH_MINUTES = 5;
+/* =====================================
+   GOOGLE SHEETS CONNECTION
+   Paste your PUBLISHED CSV link below.
+===================================== */
 
-  // COMELEC office details shown when there is no satellite registration.
-  // Fill in the address and map link; leave empty to hide them.
-  const OFFICE_ADDRESS = "";
-  const OFFICE_MAP = "";
-  const OFFICE_LINE = "Our team is at the COMELEC office. Please visit us there for assistance.";
+const GOOGLE_SHEET_CSV =
+"https://docs.google.com/spreadsheets/d/1utfWAQr_teIKPkQGr1c0uy44tI822kdt/edit?usp=sharing&ouid=116861548157199102687&rtpof=true&sd=true";
 
-  // Columns read from the sheet (any order; names are matched loosely):
-  // CITY/MUNICIPALITY | BARANGAY | DATE | LOCATION | STATUS
-  // Optional: ADDRESS | NOTES
-  // A blank CITY/MUNICIPALITY cell means "same as the row above" (merged cells work).
-  // Only type CANCELLED in STATUS when needed; the page works out the rest from the date.
-  const ALIASES = {
-    "city/municipality":"City/Municipality", "city":"City/Municipality", "municipality":"City/Municipality",
-    "barangay":"Barangay", "date":"Date",
-    "location":"Venue", "venue":"Venue", "address":"Address",
-    "status":"Status", "notes":"Notes", "note":"Notes"
-  };
+let events = [];
+let municipalities = [];
+let currentMonth = new Date(
+  new Date().getFullYear(),
+  new Date().getMonth(), 1
+);
+let selectedDate = null;
 
-  const $ = id => document.getElementById(id);
-  let DATA = [];
-  let ready = false;     // true after the first load attempt
-  let city = "";         // the chosen city/municipality
-  let monthKey = "";     // "YYYY-MM" shown in the calendar
-  let selected = "";     // the day picked in the calendar
+const today = new Date();
+today.setHours(0,0,0,0);
 
-  // ---------- date and text helpers ----------
-  function manilaToday(){
-    const parts = new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Manila",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
-    const g = t => parts.find(p=>p.type===t).value;
-    return `${g("year")}-${g("month")}-${g("day")}`;
-  }
-  // Current hour in Manila: today's visits switch to "Done for today" at 6:00 pm
-  function manilaHour(){
-    return Number(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Manila",hour:"numeric",hourCycle:"h23"}).format(new Date()));
-  }
-  function prettyDate(iso){
-    const [y,m,d] = iso.split("-").map(Number);
-    return new Date(Date.UTC(y,m-1,d)).toLocaleDateString("en-PH",{weekday:"long",month:"long",day:"numeric",year:"numeric",timeZone:"UTC"});
-  }
-  function shortDate(iso){
-    const [y,m,d] = iso.split("-").map(Number);
-    return new Date(Date.UTC(y,m-1,d)).toLocaleDateString("en-PH",{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"});
-  }
-  function esc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+document.getElementById("todayDate").textContent =
+  today.toLocaleDateString("en-PH", {
+    weekday:"long",
+    month:"long",
+    day:"numeric",
+    year:"numeric"
+  });
 
-  // Accepts 2026-11-23, 11/23/2026, November 23, 2026 (Google Sheets) or 23-Nov-26 (Excel)
-  const MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-  function toIso(v){
-    v = String(v||"").trim();
-    let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
-    m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if(m) return `${m[3]}-${m[1].padStart(2,"0")}-${m[2].padStart(2,"0")}`;
-    m = v.match(/^([A-Za-z]+)\.?\s+(\d{1,2}),?\s+(\d{4})/);
-    if(m && MONTHS[m[1].slice(0,3).toLowerCase()])
-      return `${m[3]}-${String(MONTHS[m[1].slice(0,3).toLowerCase()]).padStart(2,"0")}-${m[2].padStart(2,"0")}`;
-    m = v.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})/);
-    if(m && MONTHS[m[2].slice(0,3).toLowerCase()]){
-      const y = m[3].length===2 ? "20"+m[3] : m[3];
-      return `${y}-${String(MONTHS[m[2].slice(0,3).toLowerCase()]).padStart(2,"0")}-${m[1].padStart(2,"0")}`;
-    }
-    return "";
-  }
-  function cleanCity(s){
-    s = String(s||"").trim().replace(/\s+/g," ").replace(/^city of\s+/i,"");
-    return s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
-  }
+/* CSV PARSER */
 
-  // CSV parser that handles quoted fields
-  function parseCSV(text){
-    const rows=[]; let row=[], field="", q=false;
-    for(let i=0;i<text.length;i++){
-      const c=text[i], n=text[i+1];
-      if(q){
-        if(c=='"' && n=='"'){ field+='"'; i++; }
-        else if(c=='"'){ q=false; }
-        else field+=c;
-      } else {
-        if(c=='"') q=true;
-        else if(c===','){ row.push(field); field=""; }
-        else if(c==='\n' || c==='\r'){
-          if(c==='\r' && n==='\n') i++;
-          row.push(field); rows.push(row); row=[]; field="";
-        } else field+=c;
-      }
-    }
-    if(field.length||row.length){ row.push(field); rows.push(row); }
-    const [head,...body] = rows.filter(r=>r.some(x=>x.trim()!==""));
-    if(!head) return [];
-    const keys = head.map(h=>h.trim());
-    return body.map(r=>Object.fromEntries(keys.map((k,i)=>[k,(r[i]??"").trim()])));
-  }
+function parseCSV(text) {
+  const rows = [];
+  let row = [], value = "", quoted = false;
 
-  // Turn raw sheet rows into clean visit records
-  function normalize(rawRows){
-    let lastCity = "";
-    const out = [];
-    for(const raw of rawRows){
-      const o = {};
-      for(const [k,v] of Object.entries(raw)){
-        const key = ALIASES[String(k).trim().toLowerCase()];
-        if(key) o[key] = String(v??"").trim();
-      }
-      if(o["City/Municipality"]) lastCity = o["City/Municipality"];
-      else o["City/Municipality"] = lastCity;
-      o.Date = toIso(o.Date);
-      if(!o.Date || (!o.Barangay && !o.Venue)) continue;
-      o["City/Municipality"] = cleanCity(o["City/Municipality"]);
-      o._id = out.length;
-      out.push(o);
-    }
-    return out;
-  }
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i+1];
 
-  // ---------- loading ----------
-  function showError(msg){ $("error").textContent = msg; $("error").hidden = false; }
-
-  async function loadData(){
-    $("error").hidden = true;
-    if(!SHEET_CSV_URL){
-      showError("The schedule link is not set yet. Please contact the administrator.");
-      DATA = [];
+    if (c === '"' && quoted && next === '"') {
+      value += '"';
+      i++;
+    } else if (c === '"') {
+      quoted = !quoted;
+    } else if (c === ',' && !quoted) {
+      row.push(value);
+      value = "";
+    } else if ((c === '\n' || c === '\r') && !quoted) {
+      if (c === '\r' && next === '\n') i++;
+      row.push(value);
+      if (row.some(x => x.trim() !== "")) rows.push(row);
+      row = [];
+      value = "";
     } else {
-      try{
-        const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(), {cache:"no-store"});
-        if(!res.ok) throw new Error("HTTP " + res.status);
-        const text = await res.text();
-        if(text.trim().startsWith("<")) throw new Error("the link returned a web page, not a CSV. Re-publish the sheet as CSV and copy that link");
-        const raw = parseCSV(text);
-        DATA = normalize(raw);
-        if(!raw.length){
-          showError("The sheet link opened but returned no rows. Check the tab is published and has data.");
-        } else if(!DATA.length){
-          const dk = Object.keys(raw[0]).find(k=>/date/i.test(k));
-          const sample = dk ? raw[0][dk] : "(no DATE column found)";
-          showError(`Read ${raw.length} rows, but none had a usable date. First DATE value seen: "${sample}". Column names found: ${Object.keys(raw[0]).join(" | ")}`);
-        }
-      }catch(e){
-        showError("Could not load the latest schedule. Showing the last loaded data. (" + e.message + ")");
-      }
+      value += c;
     }
-    ready = true;
-    buildCityControls();
-    render();
-    $("loaded").textContent = new Date().toLocaleString("en-PH",{timeZone:"Asia/Manila"});
   }
 
-  // ---------- city controls ----------
-  function allCities(){ return [...new Set(DATA.map(r=>r["City/Municipality"]).filter(Boolean))].sort(); }
+  row.push(value);
+  if (row.some(x => x.trim() !== "")) rows.push(row);
+  return rows;
+}
 
-  function buildCityControls(){
-    const cities = allCities();
-    if(city && !cities.includes(city)) city = "";
-    $("cityFilter").innerHTML =
-      `<option value="">${ready ? "Choose a city/municipality…" : "Loading cities…"}</option>` +
-      cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
-    $("cityFilter").value = city;
-    renderChips();
+/* DATE HANDLING */
+
+function parseDate(value) {
+  if (!value) return null;
+
+  value = String(value).trim();
+
+  // Handles dates such as 11/28/2026 and 28/11/2026.
+  const m = value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+
+  if (m) {
+    let a = Number(m[1]);
+    let b = Number(m[2]);
+    let y = Number(m[3]);
+
+    // Assumes Philippine DD/MM/YYYY when first number > 12.
+    // Otherwise assumes MM/DD/YYYY.
+    let month = a > 12 ? b : a;
+    let day = a > 12 ? a : b;
+
+    const d = new Date(y, month - 1, day);
+    if (d.getFullYear() === y &&
+        d.getMonth() === month - 1 &&
+        d.getDate() === day) return d;
+
+    return null;
   }
 
-  function renderChips(){
-    const q = $("search").value.trim().toLowerCase();
-    const list = allCities().filter(c=>!q || c.toLowerCase().includes(q));
-    $("chips").innerHTML = list.length
-      ? list.map(c=>`<button type="button" class="chip-btn ${c===city?"on":""}" data-city="${esc(c)}">${esc(c)}</button>`).join("")
-      : `<p class="muted">No municipality matches “${esc(q)}”.</p>`;
-  }
+  const d = new Date(value);
+  if (isNaN(d)) return null;
 
-  function setCity(c){
-    city = c;
-    monthKey = ""; selected = "";
-    $("cityFilter").value = c;
-    renderChips();
-    render();
-    $("todaySec").scrollIntoView({behavior:"smooth", block:"start"});
-  }
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 
-  // ---------- visits and status ----------
-  function isCancelled(r){ return (r.Status||"").toLowerCase().includes("cancel"); }
+function dateKey(d) {
+  return d.getFullYear() + "-" +
+    String(d.getMonth()+1).padStart(2,"0") + "-" +
+    String(d.getDate()).padStart(2,"0");
+}
 
-  function visitsOn(date){
-    return DATA.filter(r=>r.Date===date && r["City/Municipality"]===city)
-      .sort((a,b)=> (a.Barangay||"").localeCompare(b.Barangay||""));
-  }
+function sameDay(a,b) {
+  return a && b && dateKey(a) === dateKey(b);
+}
 
-  // Cancelled comes from the sheet. Otherwise: today = Ongoing (until 6:00 pm), future = Upcoming, past = Completed.
-  function statusOf(r, today){
-    if(isCancelled(r)) return {text:"Cancelled", badge:"p-cx"};
-    if(r.Date===today){
-      return manilaHour() >= 18
-        ? {text:"Done for today", badge:"p-done"}
-        : {text:"Ongoing", badge:"p-live"};
+/* LOAD GOOGLE SHEET DATA */
+
+async function loadSchedules() {
+  try {
+    if (GOOGLE_SHEET_CSV.includes("PASTE_YOUR")) {
+      throw new Error("Please configure your published Google Sheets CSV link.");
     }
-    if(r.Date>today) return {text:"Upcoming", badge:"p-up"};
-    return {text:"Completed", badge:"p-done"};
-  }
 
-  function mapUrl(r){
-    if(r["Map Link"]) return r["Map Link"];
-    const q = [r.Venue, r.Barangay, r["City/Municipality"], "Batangas", "Philippines"].filter(Boolean).join(", ");
-    return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
-  }
+    const response = await fetch(
+      GOOGLE_SHEET_CSV + (GOOGLE_SHEET_CSV.includes("?") ? "&" : "?") +
+      "refresh=" + Date.now(),
+      {cache:"no-store"}
+    );
 
-  // ---------- building blocks ----------
-  // Event card: barangay, venue, address, note, status and directions. Time is not shown.
-  function cardHTML(r, today){
-    const s = statusOf(r, today);
-    return `
-    <article class="ev ${isCancelled(r)?"is-cx":""}">
-      <div class="ev-top"><span class="pill ${s.badge}">${s.text}</span><span class="ev-date">${esc(shortDate(r.Date))}</span></div>
-      <h3 class="ev-place">${esc(r.Barangay ? "Brgy. " + r.Barangay : r.Venue)}</h3>
-      ${r.Barangay && r.Venue ? `<p class="ev-venue">${esc(r.Venue)}</p>` : ""}
-      ${r.Address ? `<p class="ev-addr">${esc(r.Address)}</p>` : ""}
-      ${r.Notes ? `<p class="ev-note"><b>Note:</b> ${esc(r.Notes)}</p>` : ""}
-      <a class="btn-dir" href="${esc(mapUrl(r))}" target="_blank" rel="noopener">📍 Get directions</a>
-    </article>`;
-  }
+    if (!response.ok) throw new Error("Unable to load spreadsheet.");
 
-  function officeBox(message, extra){
-    return `<div class="office">
-      <div>${message}</div>
-      ${extra || ""}
-      ${OFFICE_ADDRESS ? `<div class="ofaddr">📍 ${esc(OFFICE_ADDRESS)}</div>` : ""}
-      ${OFFICE_MAP ? `<a class="btn-dir" href="${esc(OFFICE_MAP)}" target="_blank" rel="noopener">📍 Open office in Maps</a>` : ""}
-    </div>`;
-  }
+    const csv = await response.text();
+    const rows = parseCSV(csv);
 
-  // Next visit after today in the chosen city
-  function nextVisitHTML(today){
-    const next = DATA.filter(r=>r.Date>today && !isCancelled(r) && r["City/Municipality"]===city)
-      .sort((a,b)=> a.Date.localeCompare(b.Date) || (a.Barangay||"").localeCompare(b.Barangay||""))[0];
-    if(!next) return "";
-    return `<div class="office-next">
-      <b>Next visit:</b> ${esc(prettyDate(next.Date))}<br>
-      ${esc(next.Barangay ? "Brgy. " + next.Barangay : next.Venue)}${next.Barangay && next.Venue ? " · " + esc(next.Venue) : ""}<br>
-      <a class="btn-dir" href="${esc(mapUrl(next))}" target="_blank" rel="noopener">📍 Get directions</a>
-    </div>`;
-  }
+    if (rows.length < 2) throw new Error("No schedule records found.");
 
-  // ---------- sections ----------
-  function renderToday(today){
-    $("todayDate").textContent = prettyDate(today);
-    const body = $("todayBody");
-    if(!city){
-      $("todayTitle").textContent = "Registration today";
-      body.innerHTML = `<div class="prompt"><b>Choose your city/municipality below</b>to see where we are today.</div>`;
-      return;
+    const headers = rows[0].map(h => h.trim().toUpperCase());
+
+    const index = name => headers.indexOf(name);
+
+    const cityIndex = index("CITY/MUNICIPALITY");
+    const barangayIndex = index("BARANGAY");
+    const dateIndex = index("DATE");
+    const locationIndex = index("LOCATION");
+    const statusIndex = index("STATUS");
+
+    if ([cityIndex, barangayIndex, dateIndex, locationIndex, statusIndex]
+        .some(i => i < 0)) {
+      throw new Error("Check that all five spreadsheet headers are correct.");
     }
-    $("todayTitle").textContent = `Today in ${city}`;
-    const rows = visitsOn(today);
-    body.innerHTML = rows.length
-      ? `<div class="ev-grid">${rows.map(r=>cardHTML(r,today)).join("")}</div>`
-      : officeBox(`<b>No satellite registration today.</b><br>${OFFICE_LINE}`, nextVisitHTML(today));
+
+    events = rows.slice(1).map(row => {
+      const get = i => (row[i] || "").trim();
+
+      const date = parseDate(get(dateIndex));
+      const rawStatus = get(statusIndex).toUpperCase();
+
+      return {
+        municipality: get(cityIndex),
+        barangay: get(barangayIndex),
+        date: date,
+        location: get(locationIndex),
+        status: rawStatus === "CANCELLED" ? "CANCELLED" : "UPCOMING"
+      };
+    }).filter(e => e.municipality && e.date);
+
+    municipalities = [...new Set(
+      events.map(e => e.municipality)
+    )].sort();
+
+    renderAll();
+
+  } catch (error) {
+    document.getElementById("todayEvents").innerHTML =
+      `<div class="empty">${error.message}</div>`;
+    console.error(error);
   }
+}
 
-  function renderResults(today){
-    const box = $("results");
-    if(!city){ box.hidden = true; return; }
-    box.hidden = false;
+/* DISPLAY HELPERS */
 
-    if(!monthKey) monthKey = today.slice(0,7);
-    if(!selected || selected.slice(0,7)!==monthKey)
-      selected = monthKey === today.slice(0,7) ? today : monthKey + "-01";
+function isCancelled(e) {
+  return e.status === "CANCELLED";
+}
 
-    const [y,m] = monthKey.split("-").map(Number);
-    const first = new Date(Date.UTC(y,m-1,1));
-    const dim = new Date(Date.UTC(y,m,0)).getUTCDate();
-    const label = first.toLocaleDateString("en-PH",{month:"long",year:"numeric",timeZone:"UTC"});
-    $("monthLabel").textContent = label;
-    $("resTitle").textContent = city;
+function isFutureOrToday(e) {
+  return e.date >= today;
+}
 
-    let total = 0;
-    let cells = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>`<div class="dow">${d}</div>`).join("");
-    for(let i=0;i<first.getUTCDay();i++) cells += `<div class="dcell blank"></div>`;
-    for(let d=1; d<=dim; d++){
-      const iso = `${monthKey}-${String(d).padStart(2,"0")}`;
-      const vs = visitsOn(iso);
-      total += vs.length;
-      const cls = ["dcell", vs.length ? "has" : "", iso===today ? "today" : "", iso===selected ? "sel" : ""].join(" ");
-      const chips = vs.slice(0,2).map(r=>`<span class="dchip ${isCancelled(r)?"cx":""}">${esc(r.Barangay || r.Venue)}</span>`).join("")
-                  + (vs.length>2 ? `<span class="dmore">+${vs.length-2} more</span>` : "");
-      cells += `<button type="button" class="${cls}" data-d="${iso}" aria-label="${esc(shortDate(iso))}, ${vs.length} ${vs.length===1?"visit":"visits"}">
-        <span class="dn">${d}</span>
-        ${vs.length ? `<span class="dcnt">${vs.length}</span>` : ""}
-        <span class="dchips">${chips}</span>
-      </button>`;
+function eventCard(e) {
+  const statusClass = isCancelled(e) ? "cancelled" : "upcoming";
+  const statusText = isCancelled(e) ? "CANCELLED" : "UPCOMING";
+
+  const directions =
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(e.location + ", " + e.barangay +
+                       ", " + e.municipality + ", Batangas");
+
+  return `
+    <article class="card">
+      <h3>${escapeHTML(e.municipality)}</h3>
+
+      <div class="detail">
+        <strong>Barangay:</strong> ${escapeHTML(e.barangay)}
+      </div>
+
+      <div class="detail">
+        <strong>Date:</strong>
+        ${e.date.toLocaleDateString("en-PH", {
+          month:"long", day:"numeric", year:"numeric"
+        })}
+      </div>
+
+      <div class="detail">
+        <strong>Location:</strong> ${escapeHTML(e.location)}
+      </div>
+
+      <span class="status ${statusClass}">
+        ${statusText}
+      </span>
+
+      <br>
+
+      <a class="directions"
+         href="${directions}"
+         target="_blank" rel="noopener">
+        GET DIRECTIONS ↗
+      </a>
+    </article>
+  `;
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;",
+    '"':"&quot;", "'":"&#39;"
+  })[c]);
+}
+
+/* TODAY'S ACTIVITIES */
+
+function renderToday() {
+  const list = events.filter(e =>
+    sameDay(e.date,today) && !isCancelled(e)
+  );
+
+  document.getElementById("todayEvents").innerHTML =
+    list.length
+      ? list.map(eventCard).join("")
+      : `<div class="empty">
+          No satellite registration scheduled today.
+         </div>`;
+}
+
+/* CALENDAR */
+
+function renderCalendar() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  document.getElementById("monthLabel").textContent =
+    currentMonth.toLocaleDateString("en-PH", {
+      month:"long", year:"numeric"
+    });
+
+  const firstDay = new Date(year,month,1);
+  const start = new Date(year,month,1-firstDay.getDay());
+
+  let html = "";
+
+  for (let week=0; week<6; week++) {
+    html += "<tr>";
+
+    for (let day=0; day<7; day++) {
+      const d = new Date(start);
+      d.setDate(start.getDate()+week*7+day);
+
+      const matching = events.filter(e =>
+        sameDay(e.date,d)
+      );
+
+      const hasEvent = matching.length > 0;
+      const hasCancelled = matching.some(isCancelled);
+
+      let classes = [];
+
+      if (d.getMonth() !== month) classes.push("other");
+      if (sameDay(d,today)) classes.push("today");
+      if (hasEvent) classes.push("has-event");
+      if (hasCancelled) classes.push("cancelled-day");
+      if (selectedDate && sameDay(d,selectedDate))
+        classes.push("selected");
+
+      html += `
+        <td class="${classes.join(" ")}"
+            onclick="${hasEvent ? `selectDate('${dateKey(d)}')` : ""}">
+          ${d.getDate()}
+        </td>
+      `;
     }
-    $("cal").innerHTML = cells;
-    $("resSub").textContent = `${total} ${total===1?"visit":"visits"} in ${label}`;
 
-    const vs = visitsOn(selected);
-    $("dayTitle").innerHTML = `${esc(prettyDate(selected))} ${selected===today ? '<span class="badge-today">Today</span>' : ""}`;
-    $("dayBody").innerHTML = vs.length
-      ? `<div class="ev-grid">${vs.map(r=>cardHTML(r,today)).join("")}</div>`
-      : officeBox(`<b>No satellite registration on this day.</b><br>${OFFICE_LINE}`);
+    html += "</tr>";
+
+    if (week === 4 &&
+        new Date(year,month+1,0).getDate()+firstDay.getDay() <= 35)
+      break;
   }
 
-  function render(){
-    const today = manilaToday();
-    renderToday(today);
-    renderResults(today);
-  }
+  document.getElementById("calendar").innerHTML = html;
+}
 
-  // ---------- events ----------
-  $("cityFilter").addEventListener("change", e=> setCity(e.target.value));
-  $("chips").addEventListener("click", e=>{
-    const b = e.target.closest("[data-city]");
-    if(b) setCity(b.dataset.city);
-  });
-  $("search").addEventListener("input", renderChips);
+function changeMonth(amount) {
+  currentMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth()+amount,
+    1
+  );
+  renderCalendar();
+}
 
-  $("cal").addEventListener("click", e=>{
-    const b = e.target.closest("[data-d]");
-    if(!b) return;
-    selected = b.dataset.d;
-    render();
-  });
+function selectDate(key) {
+  const [y,m,d] = key.split("-").map(Number);
+  selectedDate = new Date(y,m-1,d);
 
-  function shiftMonth(n){
-    const [y,m] = monthKey.split("-").map(Number);
-    monthKey = new Date(Date.UTC(y,m-1+n,1)).toISOString().slice(0,7);
-    selected = "";
-    render();
-  }
-  $("prev").addEventListener("click", ()=>shiftMonth(-1));
-  $("next").addEventListener("click", ()=>shiftMonth(1));
+  renderCalendar();
 
-  // Auto-refresh the schedule every 5 minutes; update statuses every minute
-  buildCityControls();
-  loadData();
-  setInterval(loadData, REFRESH_MINUTES*60*1000);
-  setInterval(render, 60*1000);
+  const list = events.filter(e =>
+    sameDay(e.date,selectedDate)
+  );
+
+  showResults(
+    list,
+    selectedDate.toLocaleDateString("en-PH", {
+      month:"long", day:"numeric", year:"numeric"
+    })
+  );
+}
+
+/* MUNICIPALITY SEARCH */
+
+function renderMunicipalities() {
+  document.getElementById("municipalityOptions").innerHTML =
+    municipalities.map(m =>
+      `<option value="${escapeHTML(m)}"></option>`
+    ).join("");
+
+  document.getElementById("municipalityList").innerHTML =
+    municipalities.map(m =>
+      `<button onclick="selectMunicipality('${escapeHTML(m).replace(/'/g, "\\'")}')">
+        ${escapeHTML(m)}
+      </button>`
+    ).join("");
+}
+
+function searchMunicipality() {
+  const q = document.getElementById("searchInput")
+    .value.trim().toLowerCase();
+
+  const match = municipalities.find(m =>
+    m.toLowerCase() === q
+  ) || municipalities.find(m =>
+    m.toLowerCase().includes(q)
+  );
+
+  if (match) selectMunicipality(match);
+  else showResults([], "No municipality found");
+}
+
+function selectMunicipality(name) {
+  const list = events.filter(e =>
+    e.municipality.toLowerCase() === name.toLowerCase()
+  ).sort((a,b) => a.date-b.date);
+
+  document.getElementById("searchInput").value = name;
+
+  showResults(list, name);
+}
+
+/* SCHEDULE RESULTS */
+
+function showResults(list,title) {
+  document.getElementById("scheduleTitle").textContent = title;
+
+  const display = list.filter(e => isFutureOrToday(e));
+
+  document.getElementById("scheduleDescription").textContent =
+    display.length + " schedule(s) found.";
+
+  document.getElementById("scheduleResults").innerHTML =
+    display.length
+      ? display.sort((a,b) => a.date-b.date)
+          .map(eventCard).join("")
+      : `<div class="empty">No upcoming schedules found.</div>`;
+}
+
+function renderAll() {
+  renderToday();
+  renderCalendar();
+  renderMunicipalities();
+}
+
+loadSchedules();
+
+// Automatically check for Google Sheet updates every 5 minutes.
+setInterval(loadSchedules, 5 * 60 * 1000);
+
 </script>
 </body>
 </html>
