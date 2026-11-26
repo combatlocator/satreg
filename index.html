@@ -107,6 +107,19 @@ input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rg
   font-family: inherit;
 }
 .search-row button:hover { background: #dca42c; }
+.picker-wrap { position: relative; }
+.dd {
+  position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 30;
+  background: #fff; border: 1px solid #cdd7e3; border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(16,43,78,.18); max-height: 300px; overflow-y: auto;
+}
+.dd-item {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  padding: 13px 16px; font: inherit; font-size: 15px; color: var(--navy); cursor: pointer;
+  border-bottom: 1px solid #eef2f6;
+}
+.dd-item:hover, .dd-item:focus { background: var(--gold-soft); outline: none; }
+.dd-empty { padding: 14px 16px; color: var(--muted); font-size: 14px; }
 .hint { margin: 10px 2px 0; font-size: 14px; color: var(--muted); }
 
 .notice {
@@ -121,6 +134,12 @@ input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rg
 .section-heading h2 { margin: 6px 0 4px; font-size: 22px; color: var(--navy); }
 .section-heading p { color: var(--muted); font-size: 14px; margin: 0; }
 
+.fb {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+  background: #1877f2; color: #fff; text-decoration: none; font-weight: 700;
+  font-size: 14px; padding: 10px 16px; border-radius: 9px;
+}
+.fb:hover { background: #0f63d6; }
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -368,10 +387,12 @@ footer strong { color: var(--gold); }
   <!-- Step 1: choose the city or municipality -->
   <section class="picker" aria-labelledby="pickLabel">
     <label for="searchInput" id="pickLabel"><span>1</span>Select city/municipality</label>
-    <div class="search-row">
-      <input id="searchInput" list="cityList" type="search" placeholder="Type or choose a city/municipality">
-      <datalist id="cityList"></datalist>
-      <button type="button" id="searchBtn">SEARCH</button>
+    <div class="picker-wrap">
+      <div class="search-row">
+        <input id="searchInput" type="search" autocomplete="off" placeholder="Tap to choose a city/municipality">
+        <button type="button" id="searchBtn">SEARCH</button>
+      </div>
+      <div class="dd" id="dd" hidden></div>
     </div>
     <p class="hint" id="pickHint">Choose your city or municipality to see its schedule.</p>
   </section>
@@ -384,6 +405,7 @@ footer strong { color: var(--gold); }
       <small>● HAPPENING TODAY</small>
       <h2 id="todayTitle">Satellite Registration Today</h2>
       <p id="todayDate"></p>
+      <a class="fb" id="fbBtn" href="#" target="_blank" rel="noopener" hidden>👍 Follow us on Facebook</a>
     </div>
     <div class="cards" id="todayEvents"></div>
   </section>
@@ -407,10 +429,6 @@ footer strong { color: var(--gold); }
       <p class="cal-sub" id="calSub"></p>
 
       <div class="cal" id="cal"></div>
-      <p class="legend"><i></i>Highlighted dates have registration. Tap a date to see its visits.</p>
-
-      <h3 class="day-title" id="dayTitle"></h3>
-      <div class="cards" id="dayList" style="margin-top:0"></div>
     </div>
   </section>
 
@@ -545,7 +563,7 @@ async function loadSchedules(){
     const col = name => head.indexOf(name);
     const C = {
       city: col("CITY/MUNICIPALITY"), brgy: col("BARANGAY"), date: col("DATE"), loc: col("LOCATION"),
-      status: col("STATUS"), addr: col("ADDRESS"), notes: col("NOTES")
+      status: col("STATUS"), addr: col("ADDRESS"), notes: col("NOTES"), fb: col("FACEBOOK")
     };
     if([C.city, C.brgy, C.date, C.loc].some(i => i < 0))
       throw new Error("Check that the headers CITY/MUNICIPALITY, BARANGAY, DATE, LOCATION and STATUS are spelled correctly.");
@@ -566,6 +584,7 @@ async function loadSchedules(){
         barangay, venue, date,
         address: get(r, C.addr),
         notes: get(r, C.notes),
+        fb: get(r, C.fb),
         cancelled: get(r, C.status).toUpperCase().includes("CANCEL")
       });
     }
@@ -586,18 +605,27 @@ function allCities(){
 }
 
 function buildPicker(){
-  const cities = allCities();
-  if(city && !cities.includes(city)) city = "";
-  $("cityList").innerHTML = cities.map(c => `<option value="${esc(c)}"></option>`).join("");
+  if(city && !allCities().includes(city)) city = "";
   renderBrowse();
+  if(document.activeElement !== $("searchInput")) $("searchInput").value = city;
 }
 
-function renderBrowse(){
+// Full list opens on tap; typing filters it
+function renderDropdown(){
   const q = $("searchInput").value.trim().toLowerCase();
   const list = allCities().filter(c => !q || c.toLowerCase().includes(q));
+  $("dd").innerHTML = list.length
+    ? list.map(c => `<button type="button" class="dd-item" data-city="${esc(c)}">${esc(c)}</button>`).join("")
+    : `<div class="dd-empty">No municipality matches that name.</div>`;
+  $("dd").hidden = false;
+}
+function hideDropdown(){ $("dd").hidden = true; }
+
+function renderBrowse(){
+  const list = allCities();
   $("browse").innerHTML = list.length
     ? list.map(c => `<button type="button" class="${c===city ? "on" : ""}" data-city="${esc(c)}">${esc(c)}</button>`).join("")
-    : `<p class="hint" style="grid-column:1/-1">No municipality matches that name.</p>`;
+    : `<p class="hint" style="grid-column:1/-1">No schedule has been loaded yet.</p>`;
 }
 
 function selectCity(name){
@@ -606,19 +634,19 @@ function selectCity(name){
   selectedKey = "";
   $("searchInput").value = name;
   $("pickHint").textContent = "Showing the schedule for " + name + ".";
+  hideDropdown();
   renderBrowse();
   renderAll();
   $("todaySec").scrollIntoView({behavior:"smooth", block:"start"});
 }
 
-function doSearch(){
-  const typed = $("searchInput").value.trim();
-  if(!typed) return;
-  const q = typed.toLowerCase();
+function pickFirstMatch(){
+  const q = $("searchInput").value.trim().toLowerCase();
+  if(!q) return;
   const cities = allCities();
   const hit = cities.find(c => c.toLowerCase() === q) || cities.find(c => c.toLowerCase().includes(q));
   if(hit) selectCity(hit);
-  else $("pickHint").textContent = "No municipality matches “" + typed + "”. Try the list below.";
+  else $("pickHint").textContent = "No municipality matches that name. Try the list.";
 }
 
 /* ---------- visits and status ---------- */
@@ -648,17 +676,12 @@ function mapUrl(e){
 /* ---------- building blocks ---------- */
 function eventCard(e, today){
   const s = statusOf(e, today);
-  const place = e.barangay ? "Brgy. " + e.barangay : e.venue;
+  const badge = (s.cls === "cancelled" || s.cls === "upcoming") ? `<span class="status ${s.cls}">${s.text}</span>` : "";
   return `
     <article class="card ${e.cancelled ? "is-cx" : ""}">
-      <div class="card-top">
-        <span class="status ${s.cls}">${s.text}</span>
-        <span class="ev-date">${esc(shortDate(e.date))}</span>
-      </div>
-      <h3>${esc(place)}</h3>
+      ${badge}
+      <h3>${esc(e.barangay || e.venue)}</h3>
       ${e.barangay && e.venue ? `<div class="detail"><strong>Location:</strong> ${esc(e.venue)}</div>` : ""}
-      ${e.address ? `<div class="detail">${esc(e.address)}</div>` : ""}
-      ${e.notes ? `<div class="detail"><strong>Note:</strong> ${esc(e.notes)}</div>` : ""}
       <a class="directions" href="${esc(mapUrl(e))}" target="_blank" rel="noopener">GET DIRECTIONS ↗</a>
     </article>`;
 }
@@ -668,9 +691,8 @@ function nextVisitHTML(today){
     .sort((a,b) => a.date.localeCompare(b.date) || (a.barangay||"").localeCompare(b.barangay||""))[0];
   if(!next) return "";
   return `<div class="office-next">
-    <strong>Next visit:</strong> ${esc(prettyDate(next.date))}<br>
-    ${esc(next.barangay ? "Brgy. " + next.barangay : next.venue)}${next.barangay && next.venue ? " · " + esc(next.venue) : ""}<br>
-    <a class="directions" href="${esc(mapUrl(next))}" target="_blank" rel="noopener">GET DIRECTIONS ↗</a>
+    <strong>Next visit:</strong> ${esc(prettyDate(next.date))}
+    ${eventCard(next, today)}
   </div>`;
 }
 
@@ -684,8 +706,17 @@ function officeBox(message, extra){
 }
 
 /* ---------- sections ---------- */
+// First Facebook link filled in for the chosen city (only http/https links are used)
+function fbLink(){
+  const row = ROWS.find(r => r.city === city && /^https?:\/\//i.test(r.fb));
+  return row ? row.fb : "";
+}
+
 function renderToday(today){
   $("todayDate").textContent = prettyDate(today);
+  const fb = fbLink();
+  $("fbBtn").hidden = !fb;
+  if(fb) $("fbBtn").href = fb;
   if(!city){
     $("todayTitle").textContent = "Satellite Registration Today";
     $("todayEvents").innerHTML = `<div class="empty">Select your city or municipality above to see today’s registration.</div>`;
@@ -724,24 +755,18 @@ function renderCalendar(){
     const key = `${monthKey}-${String(d).padStart(2,"0")}`;
     const list = visitsOn(key);
     total += list.length;
-    const cls = ["day", list.length ? "has" : "", key === today ? "today" : "", key === selectedKey ? "sel" : ""].join(" ");
+    const cls = ["day", list.length ? "has" : "", key === today ? "today" : ""].join(" ");
     const chips = list.slice(0,3).map(e => `<span class="dchip ${e.cancelled ? "cx" : ""}">${esc(e.barangay || e.venue)}</span>`).join("")
                 + (list.length > 3 ? `<span class="dmore">+${list.length-3} more</span>` : "");
-    html += `<button type="button" class="${cls}" data-key="${key}" aria-label="${esc(shortDate(key))}, ${list.length} ${list.length===1 ? "visit" : "visits"}">
+    html += `<div class="${cls}" aria-label="${esc(shortDate(key))}, ${list.length} ${list.length===1 ? "visit" : "visits"}">
       <span class="dn">${d}</span>
       ${list.length ? `<span class="dcnt">${list.length}</span>` : ""}
       <span class="dchips">${chips}</span>
-    </button>`;
+    </div>`;
   }
   $("cal").innerHTML = html;
   $("calSub").textContent = `${total} ${total===1 ? "visit" : "visits"} in ${label}`;
 
-  // details for the picked date
-  $("dayTitle").innerHTML = `${esc(prettyDate(selectedKey))}${selectedKey === today ? ' <span class="tag">Today</span>' : ""}`;
-  const picked = visitsOn(selectedKey);
-  $("dayList").innerHTML = picked.length
-    ? picked.map(e => eventCard(e, today)).join("")
-    : officeBox(`<b>No satellite registration on this day.</b><br>${OFFICE_LINE}`);
 }
 
 function renderAll(){
@@ -750,27 +775,30 @@ function renderAll(){
 }
 
 /* ---------- events ---------- */
+$("searchInput").addEventListener("focus", () => { $("searchInput").value = ""; renderDropdown(); });
+$("searchInput").addEventListener("input", renderDropdown);
+$("searchInput").addEventListener("blur", () => setTimeout(() => {
+  hideDropdown();
+  $("searchInput").value = city;   // nothing typed means keep the current choice
+}, 150));
+$("searchInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); pickFirstMatch(); }
+});
+$("searchBtn").addEventListener("mousedown", e => e.preventDefault());
+$("searchBtn").addEventListener("click", pickFirstMatch);
+
+// keep focus in the field while tapping a suggestion
+$("dd").addEventListener("mousedown", e => e.preventDefault());
+$("dd").addEventListener("click", e => {
+  const b = e.target.closest("[data-city]");
+  if(b) selectCity(b.dataset.city);
+});
 $("browse").addEventListener("click", e => {
   const b = e.target.closest("[data-city]");
   if(b) selectCity(b.dataset.city);
 });
-$("searchInput").addEventListener("input", renderBrowse);
-$("searchInput").addEventListener("change", () => {
-  const v = $("searchInput").value.trim().toLowerCase();
-  const exact = allCities().find(c => c.toLowerCase() === v);
-  if(exact) selectCity(exact);
-});
-$("searchInput").addEventListener("keydown", e => { if(e.key === "Enter") doSearch(); });
-$("searchBtn").addEventListener("click", doSearch);
-
-$("cal").addEventListener("click", e => {
-  const b = e.target.closest("[data-key]");
-  if(!b) return;
-  selectedKey = b.dataset.key;
-  renderCalendar();
-});
-$("prevM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), -1); selectedKey = ""; renderCalendar(); });
-$("nextM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), 1);  selectedKey = ""; renderCalendar(); });
+$("prevM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), -1); renderCalendar(); });
+$("nextM").addEventListener("click", () => { monthKey = addMonths(monthKey || manilaToday().slice(0,7), 1);  renderCalendar(); });
 
 // Start: show the prompts, then load the schedule
 renderBrowse();
